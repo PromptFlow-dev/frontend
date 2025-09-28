@@ -19,20 +19,27 @@ function Navbar() {
     useEffect(() => {
         const handleScroll = () => {
             const sections = ['home', 'progress', 'how-it-works', 'founders', 'contact'];
-            const scrollPosition = window.scrollY + 100;
-
+            const scrollPosition = window.scrollY + 150; // Adjust for navbar height
+            
+            let activeSection = 'home'; // Default to home
+            
             for (const section of sections) {
                 const element = document.getElementById(section);
                 if (element) {
-                    const { offsetTop, offsetHeight } = element;
-                    if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-                        setActiveSection(section);
-                        break;
+                    const { offsetTop } = element;
+                    // If we've scrolled past this section's start, it becomes active
+                    if (scrollPosition >= offsetTop) {
+                        activeSection = section;
                     }
                 }
             }
+            
+            setActiveSection(activeSection);
         };
 
+        // Set initial active section
+        handleScroll();
+        
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
