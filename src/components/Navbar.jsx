@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AuthMateClient } from 'authmate';
 
 function Navbar() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [activeSection, setActiveSection] = useState('home');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -15,14 +19,19 @@ function Navbar() {
         }
     };
 
+    // Check if current route is active
+    const isActive = (path) => {
+        return location.pathname === path;
+    };
+
     // Update active section on scroll
     useEffect(() => {
         const handleScroll = () => {
             const sections = ['home', 'progress', 'how-it-works', 'founders', 'contact'];
             const scrollPosition = window.scrollY + 150; // Adjust for navbar height
-            
+
             let activeSection = 'home'; // Default to home
-            
+
             for (const section of sections) {
                 const element = document.getElementById(section);
                 if (element) {
@@ -33,16 +42,26 @@ function Navbar() {
                     }
                 }
             }
-            
+
             setActiveSection(activeSection);
         };
 
         // Set initial active section
         handleScroll();
-        
+
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const isAuthenticated = AuthMateClient.isAuthenticated();
+
+    const handleLogout = () => {
+        AuthMateClient.logout();
+        navigate('/');
+    };
+
+    // Only show landing page navigation on home route
+    const isLandingPage = location.pathname === '/';
 
 
     const navItems = [
@@ -74,26 +93,80 @@ function Navbar() {
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-8">
-                        {navItems.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => scrollToSection(item.id)}
-                                className={`px-3 py-2 rounded-lg transition-all duration-300 ${activeSection === item.id
-                                    ? 'text-blue-400 bg-blue-400/10'
-                                    : 'text-gray-300 hover:text-white hover:bg-white/5'
-                                    }`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                        <motion.button
-                            onClick={() => scrollToSection('contact')}
-                            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Join Waitlist
-                        </motion.button>
+                        {isLandingPage ? (
+                            <>
+                                {navItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => scrollToSection(item.id)}
+                                        className={`px-3 py-2 rounded-lg transition-all duration-300 ${activeSection === item.id
+                                            ? 'text-blue-400 bg-blue-400/10'
+                                            : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                            }`}
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                                <motion.button
+                                    onClick={() => scrollToSection('contact')}
+                                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Join Waitlist
+                                </motion.button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/"
+                                    className={`px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/')
+                                        ? 'text-blue-400 bg-blue-400/10'
+                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    Home
+                                </Link>
+
+                                {isAuthenticated ? (
+                                    <>
+                                        <Link
+                                            to="/dashboard"
+                                            className={`px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/dashboard')
+                                                ? 'text-blue-400 bg-blue-400/10'
+                                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                }`}
+                                        >
+                                            Dashboard
+                                        </Link>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-300"
+                                        >
+                                            Logout
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link
+                                            to="/login"
+                                            className={`px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/login')
+                                                ? 'text-blue-400 bg-blue-400/10'
+                                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                }`}
+                                        >
+                                            Login
+                                        </Link>
+                                        <Link
+                                            to="/signup"
+                                            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                                        >
+                                            Sign Up
+                                        </Link>
+                                    </>
+                                )}
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile menu button */}
@@ -119,15 +192,79 @@ function Navbar() {
                             className="md:hidden bg-black/40 backdrop-blur-md rounded-lg mb-4"
                         >
                             <div className="px-4 py-2 space-y-2">
-                                {navItems.map((item) => (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => scrollToSection(item.id)}
-                                        className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300"
-                                    >
-                                        {item.label}
-                                    </button>
-                                ))}
+                                {isLandingPage ? (
+                                    <>
+                                        {navItems.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => scrollToSection(item.id)}
+                                                className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300"
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link
+                                            to="/"
+                                            className={`block w-full text-left px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/')
+                                                ? 'text-blue-400 bg-blue-400/10'
+                                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                }`}
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            Home
+                                        </Link>
+
+                                        {isAuthenticated ? (
+                                            <>
+                                                <Link
+                                                    to="/dashboard"
+                                                    className={`block w-full text-left px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/dashboard')
+                                                        ? 'text-blue-400 bg-blue-400/10'
+                                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                        }`}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Dashboard
+                                                </Link>
+                                                <button
+                                                    onClick={() => {
+                                                        handleLogout();
+                                                        setIsMenuOpen(false);
+                                                    }}
+                                                    className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300"
+                                                >
+                                                    Logout
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Link
+                                                    to="/login"
+                                                    className={`block w-full text-left px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/login')
+                                                        ? 'text-blue-400 bg-blue-400/10'
+                                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                        }`}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Login
+                                                </Link>
+                                                <Link
+                                                    to="/signup"
+                                                    className={`block w-full text-left px-3 py-2 rounded-lg transition-all duration-300 ${isActive('/signup')
+                                                        ? 'text-blue-400 bg-blue-400/10'
+                                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                        }`}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Sign Up
+                                                </Link>
+                                            </>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </motion.div>
                     )}
